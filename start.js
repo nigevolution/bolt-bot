@@ -1,44 +1,42 @@
-import makeWASocket, { useMultiFileAuthState } from "@whiskeysockets/baileys"
-import Pino from "pino"
+import makeWASocket, {
+  useMultiFileAuthState,
+  fetchLatestBaileysVersion,
+  DisconnectReason
+} from "@whiskeysockets/baileys";
 
-const phone = process.env.PHONE
-
-async function start() {
-  const { state, saveCreds } = await useMultiFileAuthState("./auth")
+const start = async () => {
+  const { state, saveCreds } = await useMultiFileAuthState("auth");
+  const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
-    logger: Pino({ level: "silent" }),
     auth: state,
-    browser: ["Bolt-Bot", "Chrome", "1.0"]
-  })
+    version,
+    printQRInTerminal: false
+  });
 
-  sock.ev.on("creds.update", saveCreds)
+  sock.ev.on("creds.update", saveCreds);
 
-  let pairingRequested = false
-
-  sock.ev.on("connection.update", async (update) => {
-    const { connection } = update
-
+  sock.ev.on("connection.update", async ({ connection }) => {
     if (connection === "open") {
-      console.log("BOT CONECTADO")
-
-      if (!state.creds.registered && !pairingRequested) {
-        pairingRequested = true
-
-        setTimeout(async () => {
-          const code = await sock.requestPairingCode(phone)
-          console.log("")
-          console.log("=================================")
-          console.log("PAIRING CODE:", code)
-          console.log("=================================")
-          console.log("")
-        }, 4000)
-      }
+      console.log("🟢 BOT CONECTADO COM SUCESSO!");
     }
-  })
 
-  // mantém o processo vivo (Railway não mata)
-  setInterval(() => {}, 1000)
-}
+    if (connection === "close") {
+      console.log("🔴 DESCONECTADO. REINICIANDO...");
+      start();
+    }
+  });
 
-start()
+  // 🔥 FORÇA O PAREAMENTO
+  setTimeout(async () => {
+    const phone = process.env.PHONE;
+    if (!phone) return console.log("❌ Defina a variável PHONE no Railway.");
+
+    const code = await sock.requestPairingCode(phone);
+    console.log("\n================================");
+    console.log("PAIRING CODE:", code);
+    console.log("================================\n");
+  }, 3000);
+};
+
+start();
