@@ -1,42 +1,33 @@
-import makeWASocket, {
-  useMultiFileAuthState,
-  fetchLatestBaileysVersion
-} from "@whiskeysockets/baileys"
-import readline from "readline"
+import makeWASocket, { useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys"
+import Pino from "pino"
 
-async function startBot() {
-  const { state, saveCreds } = await useMultiFileAuthState("./auth_info")
-  const { version } = await fetchLatestBaileysVersion()
+const phone = process.env.PHONE
+
+async function start() {
+  const { state, saveCreds } = await useMultiFileAuthState("./auth")
 
   const sock = makeWASocket({
-    version,
+    logger: Pino({ level: "silent" }),
     auth: state,
-    printQRInTerminal: false,
-    browser: ["Ubuntu","Chrome","22.04"]
+    browser: ["Bolt-Bot", "Chrome", "1.0"]
   })
 
   sock.ev.on("creds.update", saveCreds)
 
-  if (!sock.authState.creds.registered) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout
-    })
-
-    rl.question("DIGITE SEU NÚMERO COM DDI (ex: 5511999999999): ", async (num) => {
-      const code = await sock.requestPairingCode(num)
-      console.log("\n==============================")
-      console.log("PAIRING CODE:", code)
-      console.log("==============================\n")
-      rl.close()
-    })
-  }
-
-  sock.ev.on("connection.update", (update) => {
-    if (update.connection === "open") {
-      console.log("\nBOT CONECTADO COM SUCESSO\n")
+  sock.ev.on("connection.update", async ({ connection }) => {
+    if (connection === "open") {
+      console.log("BOT CONECTADO COM SUCESSO")
     }
   })
+
+  if (!state.creds.registered) {
+    console.log("Gerando código de pareamento para:", phone)
+
+    const code = await sock.requestPairingCode(phone)
+    console.log("=================================")
+    console.log("PAIRING CODE:", code)
+    console.log("=================================")
+  }
 }
 
-startBot()
+start()
