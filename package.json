@@ -1,14 +1,14 @@
 {
   "name": "bolt-bot",
   "version": "1.0.0",
-  "type": "module",
+  "private": true,
   "main": "start.js",
+  "type": "module",
   "scripts": {
     "start": "node start.js"
   },
   "dependencies": {
-    "@whiskeysockets/baileys": "^7.0.0-rc.9",
-    "pino": "^9.0.0",
+    "@whiskeysockets/baileys": "^6.6.0",
     "qrcode-terminal": "^0.12.0"
   }
 }
