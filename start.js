@@ -14,8 +14,6 @@ const start = async () => {
     printQRInTerminal: false
   });
 
-  sock.ev.on("creds.update", saveCreds);
-
   sock.ev.on("connection.update", async ({ connection }) => {
     if (connection === "open") {
       console.log("🟢 BOT CONECTADO COM SUCESSO!");
@@ -27,11 +25,16 @@ const start = async () => {
     }
   });
 
-  // 🔥 FORÇA O PAREAMENTO
+  // 🔥 FORÇA PAREAMENTO
   setTimeout(async () => {
     const phone = process.env.PHONE;
     if (!phone) return console.log("❌ Defina a variável PHONE no Railway.");
 
+    const code = await sock.requestPairingCode(phone);
+    console.log("\n===============================");
+    console.log("PAIRING CODE:", code);
+    console.log("===============================\n");
+  }, 3000);
     const code = await sock.requestPairingCode(phone);
     console.log("\n================================");
     console.log("PAIRING CODE:", code);
