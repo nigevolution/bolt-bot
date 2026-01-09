@@ -1,0 +1,14 @@
+{
+  "name": "bolt-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp Bolt Bot",
+  "type": "module",
+  "main": "start.js",
+  "scripts": {
+    "start": "node start.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0",
+    "pino": "^9.6.0"
+  }
+}
