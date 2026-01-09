@@ -27,13 +27,18 @@ async function start() {
 
         setTimeout(async () => {
           const code = await sock.requestPairingCode(phone)
+          console.log("")
           console.log("=================================")
           console.log("PAIRING CODE:", code)
           console.log("=================================")
-        }, 3000)
+          console.log("")
+        }, 4000)
       }
     }
   })
+
+  // mantém o processo vivo (Railway não mata)
+  setInterval(() => {}, 1000)
 }
 
 start()
