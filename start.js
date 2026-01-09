@@ -1,9 +1,9 @@
 import makeWASocket, { DisconnectReason, useMultiFileAuthState } from "@whiskeysockets/baileys"
 import qrcode from "qrcode-terminal"
 
-async function start() {
-  console.log("INICIANDO BOT...")
+console.log("BOT INICIANDO...")
 
+async function start() {
   const { state, saveCreds } = await useMultiFileAuthState("./auth")
 
   const sock = makeWASocket({
@@ -15,8 +15,12 @@ async function start() {
 
   sock.ev.on("connection.update", ({ connection, qr, lastDisconnect }) => {
     if (qr) {
-      console.log("QR RECEBIDO:")
+      console.log("QR CODE:")
       qrcode.generate(qr, { small: true })
+    }
+
+    if (connection === "open") {
+      console.log("BOT CONECTADO COM SUCESSO 🚀")
     }
 
     if (connection === "close") {
@@ -24,12 +28,8 @@ async function start() {
         console.log("Reconectando...")
         start()
       } else {
-        console.log("Deslogado do WhatsApp.")
+        console.log("Deslogado.")
       }
-    }
-
-    if (connection === "open") {
-      console.log("BOT CONECTADO COM SUCESSO 🚀")
     }
   })
 }
