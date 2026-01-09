@@ -4,42 +4,35 @@ import makeWASocket, {
   DisconnectReason
 } from "@whiskeysockets/baileys";
 
-const start = async () => {
+async function start() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
     auth: state,
     version,
-    printQRInTerminal: false
+    browser: ["BoltBot", "Chrome", "1.0"]
   });
 
-  sock.ev.on("connection.update", async ({ connection }) => {
-    if (connection === "open") {
-      console.log("🟢 BOT CONECTADO COM SUCESSO!");
-    }
+  sock.ev.on("creds.update", saveCreds);
 
-    if (connection === "close") {
-      console.log("🔴 DESCONECTADO. REINICIANDO...");
-      start();
-    }
-  });
-
-  // 🔥 FORÇA PAREAMENTO
-  setTimeout(async () => {
+  if (!sock.authState.creds.registered) {
     const phone = process.env.PHONE;
-    if (!phone) return console.log("❌ Defina a variável PHONE no Railway.");
+    console.log("📲 Gerando código para:", phone);
 
     const code = await sock.requestPairingCode(phone);
-    console.log("\n===============================");
+    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━");
     console.log("PAIRING CODE:", code);
-    console.log("===============================\n");
-  }, 3000);
-    const code = await sock.requestPairingCode(phone);
-    console.log("\n================================");
-    console.log("PAIRING CODE:", code);
-    console.log("================================\n");
-  }, 3000);
-};
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+  }
+
+  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
+    if (connection === "close") {
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      if (shouldReconnect) start();
+    }
+    if (connection === "open") console.log("🤖 BOT CONECTADO COM SUCESSO");
+  });
+}
 
 start();
