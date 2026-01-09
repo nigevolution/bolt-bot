@@ -4,35 +4,44 @@ import makeWASocket, {
   DisconnectReason
 } from "@whiskeysockets/baileys";
 
-async function start() {
+const start = async () => {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
   const { version } = await fetchLatestBaileysVersion();
 
   const sock = makeWASocket({
-    auth: state,
     version,
-    browser: ["BoltBot", "Chrome", "1.0"]
+    auth: state,
+    browser: ["Bolt-Bot", "Chrome", "110"],
+    printQRInTerminal: false
   });
 
   sock.ev.on("creds.update", saveCreds);
 
-  if (!sock.authState.creds.registered) {
-    const phone = process.env.PHONE;
-    console.log("📲 Gerando código para:", phone);
-
-    const code = await sock.requestPairingCode(phone);
-    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("PAIRING CODE:", code);
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-  }
-
   sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
     if (connection === "close") {
-      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) start();
+      const reason = lastDisconnect?.error?.output?.statusCode;
+      if (reason !== DisconnectReason.loggedOut) {
+        console.log("Reconectando...");
+        start();
+      }
     }
-    if (connection === "open") console.log("🤖 BOT CONECTADO COM SUCESSO");
+
+    if (connection === "open") {
+      console.log("BOT ONLINE COM SUCESSO");
+    }
   });
-}
+
+  if (!sock.authState.creds.registered) {
+    const phone = process.env.PHONE;
+    console.log("Gerando código para:", phone);
+
+    setTimeout(async () => {
+      const code = await sock.requestPairingCode(phone);
+      console.log("══════════════════════════");
+      console.log("CÓDIGO WHATSAPP:", code);
+      console.log("══════════════════════════");
+    }, 3000);
+  }
+};
 
 start();
