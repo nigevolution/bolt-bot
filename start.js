@@ -1,17 +1,8 @@
 import makeWASocket, {
   useMultiFileAuthState,
-  fetchLatestBaileysVersion,
-  DisconnectReason
+  fetchLatestBaileysVersion
 } from "@whiskeysockets/baileys"
-import { Boom } from "@hapi/boom"
-import fs from "fs"
-
-console.clear()
-console.log("====================================")
-console.log("   TB-BASS IR • WhatsApp BOT")
-console.log("====================================")
-console.log("BOT INICIANDO...")
-console.log("AGUARDANDO QR CODE...\n")
+import readline from "readline"
 
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("./auth_info")
@@ -20,29 +11,30 @@ async function startBot() {
   const sock = makeWASocket({
     version,
     auth: state,
-    browser: ["Ubuntu","Chrome","22.04"],
-    printQRInTerminal: true
+    printQRInTerminal: false,
+    browser: ["Ubuntu","Chrome","22.04"]
   })
 
   sock.ev.on("creds.update", saveCreds)
 
-  sock.ev.on("connection.update", (update) => {
-    const { connection, lastDisconnect } = update
+  if (!sock.authState.creds.registered) {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    })
 
-    if (connection === "close") {
-      const shouldReconnect =
-        (lastDisconnect?.error instanceof Boom) &&
-        lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut
-
-      console.log("Conexão encerrada. Reconectando...", shouldReconnect)
-
-      if (shouldReconnect) startBot()
-    }
-
-    if (connection === "open") {
+    rl.question("DIGITE SEU NÚMERO COM DDI (ex: 5511999999999): ", async (num) => {
+      const code = await sock.requestPairingCode(num)
       console.log("\n==============================")
-      console.log("   BOT CONECTADO COM SUCESSO")
+      console.log("PAIRING CODE:", code)
       console.log("==============================\n")
+      rl.close()
+    })
+  }
+
+  sock.ev.on("connection.update", (update) => {
+    if (update.connection === "open") {
+      console.log("\nBOT CONECTADO COM SUCESSO\n")
     }
   })
 }
