@@ -1,4 +1,4 @@
-import makeWASocket, { useMultiFileAuthState, DisconnectReason } from "@whiskeysockets/baileys"
+import makeWASocket, { useMultiFileAuthState } from "@whiskeysockets/baileys"
 import Pino from "pino"
 
 const phone = process.env.PHONE
@@ -14,20 +14,26 @@ async function start() {
 
   sock.ev.on("creds.update", saveCreds)
 
-  sock.ev.on("connection.update", async ({ connection }) => {
+  let pairingRequested = false
+
+  sock.ev.on("connection.update", async (update) => {
+    const { connection } = update
+
     if (connection === "open") {
-      console.log("BOT CONECTADO COM SUCESSO")
+      console.log("BOT CONECTADO")
+
+      if (!state.creds.registered && !pairingRequested) {
+        pairingRequested = true
+
+        setTimeout(async () => {
+          const code = await sock.requestPairingCode(phone)
+          console.log("=================================")
+          console.log("PAIRING CODE:", code)
+          console.log("=================================")
+        }, 3000)
+      }
     }
   })
-
-  if (!state.creds.registered) {
-    console.log("Gerando código de pareamento para:", phone)
-
-    const code = await sock.requestPairingCode(phone)
-    console.log("=================================")
-    console.log("PAIRING CODE:", code)
-    console.log("=================================")
-  }
 }
 
 start()
